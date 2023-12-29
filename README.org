@@ -1,0 +1,43 @@
+* polarpaw
+
+** summary
+
+My workflow with gpt 3.5 is a lot of copy paste so this helps with
+that.
+
+My flow:
+#+begin_example
+Advise that any code gpt returns is in txtar format
+I copy code to my clipboard
+I run this app and it extracts the txtar archive from my clipboard to current dir.
+#+end_example
+
+I'm guessing copilot renders my flow pointless, but I haven't messed with copilot yet.
+
+** gpt
+
+We will create golang app that will make use of these packages:
+#+begin_example
+github.com/atotto/clipboard
+golang.org/x/tools/txtar
+#+end_example
+
+#+begin_example
+write the contents of the clipboard to a temp file
+write the path of the tempfile to stderr so we can debug later
+use the txtar package to detect if the temp file is in txtar compliant format
+for each file in txtar archive, extract it
+if there are no errors in extraction, then delete temp file
+
+make sure to not use io/ioutil since its deprecated.
+#+end_example
+
+** usage
+
+#+begin_example
+# manually copy txtar file to clipboard
+make 
+./polarpaw --verbose --verbose
+#+end_example
+
+observe: files have been expanded from txtar archive to current directory as base directory.
