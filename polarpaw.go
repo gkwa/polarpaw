@@ -24,6 +24,8 @@ var opts struct {
 	logLevel  slog.Level
 }
 
+var extractionStatusSlice []ExtractionStatus
+
 func Execute() int {
 	if err := parseFlags(); err != nil {
 		return 1
@@ -51,8 +53,6 @@ func parseFlags() error {
 }
 
 func run() error {
-	var extractionStatusSlice []ExtractionStatus
-
 	clipboardContent, err := clipboard.ReadAll()
 	if err != nil {
 		return fmt.Errorf("error reading from clipboard: %w", err)
@@ -79,23 +79,23 @@ func run() error {
 		localPath := filepath.Join(".", file.Name)
 
 		if err := createDirectories(localPath); err != nil {
-			extractionStatusSlice = appendStatus(extractionStatusSlice, file.Name, false, fmt.Sprintf("Error creating directories: %v", err))
+			extractionStatusSlice = appendStatus(file.Name, false, fmt.Sprintf("Error creating directories: %v", err))
 			continue
 		}
 
 		newFile, err := createFile(localPath)
 		if err != nil {
-			extractionStatusSlice = appendStatus(extractionStatusSlice, file.Name, false, fmt.Sprintf("Error creating new file: %v", err))
+			extractionStatusSlice = appendStatus(file.Name, false, fmt.Sprintf("Error creating new file: %v", err))
 			continue
 		}
 		defer closeFile(newFile)
 
 		if err := writeFile(newFile, file.Data); err != nil {
-			extractionStatusSlice = appendStatus(extractionStatusSlice, file.Name, false, fmt.Sprintf("Error writing to file: %v", err))
+			extractionStatusSlice = appendStatus(file.Name, false, fmt.Sprintf("Error writing to file: %v", err))
 			continue
 		}
 
-		extractionStatusSlice = appendStatus(extractionStatusSlice, file.Name, true, "")
+		extractionStatusSlice = appendStatus(file.Name, true, "")
 		slog.Debug("file extracted", "path", localPath)
 	}
 
@@ -147,8 +147,8 @@ func writeFile(file *os.File, data []byte) error {
 	return err
 }
 
-func appendStatus(slice []ExtractionStatus, filename string, success bool, errorMessage string) []ExtractionStatus {
-	return append(slice, ExtractionStatus{
+func appendStatus(filename string, success bool, errorMessage string) []ExtractionStatus {
+	return append(extractionStatusSlice, ExtractionStatus{
 		ArchiveFilename: filename,
 		Success:         success,
 		ErrorMessage:    errorMessage,
