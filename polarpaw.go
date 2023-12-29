@@ -11,6 +11,7 @@ import (
 	"golang.org/x/tools/txtar"
 )
 
+// ExtractionStatus represents the extraction status of a file.
 type ExtractionStatus struct {
 	ArchiveFilename string
 	Success         bool
@@ -57,34 +58,13 @@ func run() error {
 		return fmt.Errorf("error reading from clipboard: %w", err)
 	}
 
-	tempFile, err := os.CreateTemp("", "clipboard-*.txt")
+	tempFile, err := createTempFile(clipboardContent)
 	if err != nil {
 		return fmt.Errorf("error creating temp file: %w", err)
 	}
-	defer func() {
-		allSuccess := true
-		for _, status := range extractionStatusSlice {
-			if !status.Success {
-				allSuccess = false
-				break
-			}
-		}
+	defer cleanupTempFile(tempFile, extractionStatusSlice)
 
-		if allSuccess {
-			if err := os.Remove(tempFile.Name()); err != nil {
-				slog.Error("error deleting temp file", "error", err)
-			} else {
-				slog.Info("temp file deleted", "path", tempFile.Name())
-			}
-		}
-	}()
-	defer tempFile.Close()
-
-	if _, err := tempFile.WriteString(clipboardContent); err != nil {
-		return fmt.Errorf("error writing to temp file: %w", err)
-	}
-
-	archive, err := txtar.ParseFile(tempFile.Name())
+	archive, err := parseTxtarArchive(tempFile)
 	if err != nil {
 		return fmt.Errorf("error parsing txtar archive: %w", err)
 	}
@@ -98,43 +78,88 @@ func run() error {
 	for _, file := range archive.Files {
 		localPath := filepath.Join(".", file.Name)
 
-		if err := os.MkdirAll(filepath.Dir(localPath), 0o755); err != nil {
-			extractionStatusSlice = append(extractionStatusSlice, ExtractionStatus{
-				ArchiveFilename: file.Name,
-				Success:         false,
-				ErrorMessage:    fmt.Sprintf("Error creating directories: %v", err),
-			})
+		if err := createDirectories(localPath); err != nil {
+			extractionStatusSlice = appendStatus(extractionStatusSlice, file.Name, false, fmt.Sprintf("Error creating directories: %v", err))
 			continue
 		}
 
-		newFile, err := os.Create(localPath)
+		newFile, err := createFile(localPath)
 		if err != nil {
-			extractionStatusSlice = append(extractionStatusSlice, ExtractionStatus{
-				ArchiveFilename: file.Name,
-				Success:         false,
-				ErrorMessage:    fmt.Sprintf("Error creating new file: %v", err),
-			})
+			extractionStatusSlice = appendStatus(extractionStatusSlice, file.Name, false, fmt.Sprintf("Error creating new file: %v", err))
 			continue
 		}
-		defer newFile.Close()
+		defer closeFile(newFile)
 
-		if _, err := newFile.Write(file.Data); err != nil {
-			extractionStatusSlice = append(extractionStatusSlice, ExtractionStatus{
-				ArchiveFilename: file.Name,
-				Success:         false,
-				ErrorMessage:    fmt.Sprintf("Error writing to file: %v", err),
-			})
+		if err := writeFile(newFile, file.Data); err != nil {
+			extractionStatusSlice = appendStatus(extractionStatusSlice, file.Name, false, fmt.Sprintf("Error writing to file: %v", err))
 			continue
 		}
 
-		extractionStatusSlice = append(extractionStatusSlice, ExtractionStatus{
-			ArchiveFilename: file.Name,
-			Success:         true,
-			ErrorMessage:    "",
-		})
-
+		extractionStatusSlice = appendStatus(extractionStatusSlice, file.Name, true, "")
 		slog.Debug("file extracted", "path", localPath)
 	}
 
 	return nil
+}
+
+func createTempFile(content string) (*os.File, error) {
+	tempFile, err := os.CreateTemp("", "clipboard-*.txt")
+	if err != nil {
+		return nil, err
+	}
+	if _, err := tempFile.WriteString(content); err != nil {
+		tempFile.Close()
+		return nil, err
+	}
+	return tempFile, nil
+}
+
+func cleanupTempFile(tempFile *os.File, extractionStatusSlice []ExtractionStatus) {
+	allSuccess := allSuccess(extractionStatusSlice)
+	if allSuccess {
+		if err := os.Remove(tempFile.Name()); err != nil {
+			slog.Error("error deleting temp file", "error", err)
+		} else {
+			slog.Info("temp file deleted", "path", tempFile.Name())
+		}
+	}
+	tempFile.Close()
+}
+
+func parseTxtarArchive(tempFile *os.File) (*txtar.Archive, error) {
+	return txtar.ParseFile(tempFile.Name())
+}
+
+func createDirectories(localPath string) error {
+	return os.MkdirAll(filepath.Dir(localPath), 0o755)
+}
+
+func createFile(localPath string) (*os.File, error) {
+	return os.Create(localPath)
+}
+
+func closeFile(file *os.File) {
+	file.Close()
+}
+
+func writeFile(file *os.File, data []byte) error {
+	_, err := file.Write(data)
+	return err
+}
+
+func appendStatus(slice []ExtractionStatus, filename string, success bool, errorMessage string) []ExtractionStatus {
+	return append(slice, ExtractionStatus{
+		ArchiveFilename: filename,
+		Success:         success,
+		ErrorMessage:    errorMessage,
+	})
+}
+
+func allSuccess(statusSlice []ExtractionStatus) bool {
+	for _, status := range statusSlice {
+		if !status.Success {
+			return false
+		}
+	}
+	return true
 }
