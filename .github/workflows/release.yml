@@ -24,11 +24,3 @@ jobs:
         args: release --clean
       env:
         GITHUB_TOKEN: ${{ secrets.GH_PAT3 }}
-brews:
-- name: polarpaw
-  directory: Formula
-  homepage: https://github.com/taylormonacelli/homebrew-tools
-  repository:
-    owner: taylormonacelli
-    name: homebrew-tools
-    branch: main
