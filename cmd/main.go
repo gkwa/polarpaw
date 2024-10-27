@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/taylormonacelli/polarpaw"
+	"github.com/gkwa/polarpaw"
 )
 
 func main() {

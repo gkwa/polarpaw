@@ -15,6 +15,13 @@ builds:
   - amd64
   binary: polarpaw
   id: polarpaw
+  ldflags:
+  - -s -w
+    -X "github.com/gkwa/polarpaw/version.Version={{ .Version }}"
+    -X "github.com/gkwa/polarpaw/version.Date={{ .CommitDate }}"
+    -X "github.com/gkwa/polarpaw/version.GoVersion={{ .Env.GOVERSION }}"
+    -X "github.com/gkwa/polarpaw/version.ShortGitSHA={{ .ShortCommit }}"
+    -X "github.com/gkwa/polarpaw/version.FullGitSHA={{ .FullCommit }}"
 archives:
 - format: tar.gz
   name_template: |-
@@ -40,8 +47,17 @@ changelog:
 brews:
 - name: polarpaw
   directory: Formula
-  homepage: https://github.com/taylormonacelli/homebrew-tools
+  homepage: https://github.com/gkwa/polarpaw
   repository:
-    owner: taylormonacelli
+    owner: gkwa
     name: homebrew-tools
     branch: main
+scoops:
+- name: polarpaw
+  homepage: https://github.com/gkwa/polarpaw
+  description: "Description of the polarpaw project"
+  license: MIT
+  repository:
+    owner: gkwa
+    name: scoop-bucket
+    branch: master

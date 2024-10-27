@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/atotto/clipboard"
+	"github.com/gkwa/polarpaw/version"
 	"github.com/jessevdk/go-flags"
 	"golang.org/x/tools/txtar"
 )
@@ -20,6 +21,7 @@ type ExtractionStatus struct {
 
 var opts struct {
 	LogFormat string `long:"log-format" choice:"text" choice:"json" default:"text" required:"false"`
+	Version   bool   `long:"version" required:"false"`
 	Verbose   []bool `short:"v" long:"verbose" description:"Show verbose debug information, each -v bumps log level"`
 	logLevel  slog.Level
 }
@@ -29,6 +31,12 @@ var extractionStatusSlice []ExtractionStatus
 func Execute() int {
 	if err := parseFlags(); err != nil {
 		return 1
+	}
+
+	if opts.Version {
+		buildInfo := version.GetBuildInfo()
+		fmt.Println(buildInfo)
+		os.Exit(0)
 	}
 
 	if err := setLogLevel(); err != nil {
