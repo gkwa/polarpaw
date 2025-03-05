@@ -1,12 +1,14 @@
 module github.com/gkwa/polarpaw
 
-go 1.22.4
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/taylormonacelli/littlecow v0.0.5
-	golang.org/x/tools v0.30.0
+	golang.org/x/tools v0.31.0
 )
 
-require golang.org/x/sys v0.30.0 // indirect
+require golang.org/x/sys v0.31.0 // indirect
