@@ -8,7 +8,7 @@ require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/taylormonacelli/littlecow v0.0.5
-	golang.org/x/tools v0.40.0
+	golang.org/x/tools v0.41.0
 )
 
-require golang.org/x/sys v0.39.0 // indirect
+require golang.org/x/sys v0.40.0 // indirect
